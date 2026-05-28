@@ -1,40 +1,20 @@
--- ==========================================
--- BYFRON/HYPERION BYPASS & ANTI-CHEAT EVADER
--- ==========================================
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+-- GitHub veya Pastebin'e yüklenecek olan temiz içerik:
+local InsertService = game:GetService("InsertService")
+local HD_Admin_ID = 2575409224
 
--- Anti-Cheat'in hafıza kontrolünü (Memory Check) yanıltma
-if not game:IsLoaded() then game.Loaded:Wait() end
-
--- 1. METATABLE BYPASS (Hile Kontrolünü Kör Etme)
--- Oyun senin hızını kontrol etmek istediğinde ona her zaman "16" (normal hız) raporu verir.
-local rawmt = getrawmetatable(game)
-local oldindex = rawmt.__index
-setreadonly(rawmt, false)
-
-rawmt.__index = newcclosure(function(self, key)
-    if tostring(self) == "Humanoid" and key == "WalkSpeed" then
-        return 16 -- Anti-cheat hızı sorguladığında yalan söyler
-    elseif tostring(self) == "Humanoid" and key == "JumpPower" then
-        return 50 -- Anti-cheat zıplamayı sorguladığında yalan söyler
-    end
-    return oldindex(self, key)
+local success, model = pcall(function()
+    return InsertService:LoadAsset(HD_Admin_ID)
 end)
-setreadonly(rawmt, true)
 
--- 2. GERÇEK DEĞERLERİ ARKA PLANDA DEĞİŞTİRME (Zorlama Döngüsü)
-task.spawn(function()
-    while task.wait(0.1) do
-        pcall(function()
-            local char = LocalPlayer.Character
-            if char and char:FindFirstChild("Humanoid") then
-                -- Anti-cheat'in algılayamadığı ham CFrame hilesi
-                if char.Humanoid.MoveDirection.Magnitude > 0 then
-                    -- Hız Çarpanı: Sondaki 2.5 değerini artırarak daha da hızlanabilirsin
-                    char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame + (char.Humanoid.MoveDirection * 2.5)
-                end
-            end
+if success and model then
+    model.Parent = game.Workspace
+    local hdMain = model:FindFirstChildOfClass("Folder") or model
+    hdMain.Name = "HD Admin"
+    print("[Sistem] HD Admin loadstring ile başarıyla yüklendi!")
+else
+    warn("[Hata] Yükleme başarısız.")
+end
+end
         end)
     end
 end)
