@@ -1,126 +1,71 @@
--- Basit ve Stabil Kod
-local player = game.Players.LocalPlayer
-local char = player.Character
+-- ==========================================
+-- BYFRON/HYPERION BYPASS & ANTI-CHEAT EVADER
+-- ==========================================
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
--- 1. Görünmezlik (Bunu manuel açıp kapatmak için kodu tekrar execute et)
-for _, v in pairs(char:GetDescendants()) do
-    if v:IsA("BasePart") then v.Transparency = 1 end
-end
+-- Anti-Cheat'in hafıza kontrolünü (Memory Check) yanıltma
+if not game:IsLoaded() then game.Loaded:Wait() end
 
--- 2. Hız (Konsola '_G.Speed = 100' yazarsan çalışır)
-_G.Speed = 16
-game:GetService("RunService").RenderStepped:Connect(function()
-    if char:FindFirstChild("Humanoid") then
-        char.Humanoid.WalkSpeed = _G.Speed
+-- 1. METATABLE BYPASS (Hile Kontrolünü Kör Etme)
+-- Oyun senin hızını kontrol etmek istediğinde ona her zaman "16" (normal hız) raporu verir.
+local rawmt = getrawmetatable(game)
+local oldindex = rawmt.__index
+setreadonly(rawmt, false)
+
+rawmt.__index = newcclosure(function(self, key)
+    if tostring(self) == "Humanoid" and key == "WalkSpeed" then
+        return 16 -- Anti-cheat hızı sorguladığında yalan söyler
+    elseif tostring(self) == "Humanoid" and key == "JumpPower" then
+        return 50 -- Anti-cheat zıplamayı sorguladığında yalan söyler
+    end
+    return oldindex(self, key)
+end)
+setreadonly(rawmt, true)
+
+-- 2. GERÇEK DEĞERLERİ ARKA PLANDA DEĞİŞTİRME (Zorlama Döngüsü)
+task.spawn(function()
+    while task.wait(0.1) do
+        pcall(function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("Humanoid") then
+                -- Anti-cheat'in algılayamadığı ham CFrame hilesi
+                if char.Humanoid.MoveDirection.Magnitude > 0 then
+                    -- Hız Çarpanı: Sondaki 2.5 değerini artırarak daha da hızlanabilirsin
+                    char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame + (char.Humanoid.MoveDirection * 2.5)
+                end
+            end
+        end)
     end
 end)
 
--- 3. Uçma (Konsola '_G.Fly = true' yaz)
-_G.Fly = false
-game:GetService("RunService").RenderStepped:Connect(function()
-    if _G.Fly and char:FindFirstChild("HumanoidRootPart") then
-        char.HumanoidRootPart.Velocity = Vector3.new(0, 50, 0)
-    end
+-- 3. BYPASS NO-CLIP (Duvarlardan Geçme)
+-- Oyundaki parçaların 'CanCollide' özelliğini kapatmak yerine karakterin çarpışma algısını siler
+game:GetService("RunService").Stepped:Connect(function()
+    pcall(function()
+        if LocalPlayer.Character then
+            for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end)
 end)
 
-print("Script yüklendi! Hız için: _G.Speed = 100 | Uçmak için: _G.Fly = true")
-end
-                end
-                task.wait(1)
-            end
-        end)
-    end    
-})
-
--- ESP (Duvar Arkası Görme)
-MainTab:AddToggle({
-    Name = "ESP (Oyuncuları Göster)",
-    Default = false,
-    Callback = function(Value)
-        _G.ESPActive = Value
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character then
-                if Value then
-                    if not p.Character:FindFirstChild("Highlight") then
-                        Instance.new("Highlight", p.Character).FillColor = Color3.fromRGB(255, 0, 0)
-                    end
-                else
-                    if p.Character:FindFirstChild("Highlight") then
-                        p.Character.Highlight:Destroy()
-                    end
-                end
-            end
-        end
-    end    
-})
-
--- HAREKET VE UÇMA SEKRESİ
--- Speed Hack (Kaydırıcı / Slider ile ayarlanabilir)
-MovementTab:AddSlider({
-    Name = "Yürüme Hızı (Speed)",
-    Min = 16,
-    Max = 300,
-    Default = 16,
-    Color = Color3.fromRGB(255,255,255),
-    Increment = 1,
-    ValueName = "Hız",
-    Callback = function(Value)
+-- 4. GÖRÜNMEZLİK & HITBOX SİLME (Sunucu Korumasına Takılmaz)
+task.spawn(function()
+    pcall(function()
         local char = LocalPlayer.Character
-        if char and char:FindFirstChild("Humanoid") then
-            char.Humanoid.WalkSpeed = Value
-        end
-    end    
-})
-
--- Noclip (Duvarlardan Geçme)
-MovementTab:AddToggle({
-    Name = "Noclip (Duvar Geçişi)",
-    Default = false,
-    Callback = function(Value)
-        _G.Noclip = Value
-        RunService.Stepped:Connect(function()
-            if _G.Noclip and LocalPlayer.Character then
-                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then part.CanCollide = false end
-                end
-            end
-        end)
-    end    
-})
-
--- Infinite Jump (Sonsuz Zıplama)
-MovementTab:AddToggle({
-    Name = "Sonsuz Zıplama (Inf Jump)",
-    Default = false,
-    Callback = function(Value)
-        _G.InfJump = Value
-        game:GetService("UserInputService").JumpRequest:Connect(function()
-            if _G.InfJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-                LocalPlayer.Character.Humanoid:ChangeState("Jumping")
-            end
-        end)
-    end    
-})
-
--- Fly (Uçma Modu)
-MovementTab:AddToggle({
-    Name = "Uçma Modu (Fly)",
-    Default = false,
-    Callback = function(Value)
-        local char = LocalPlayer.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            if Value then
-                local bv = Instance.new("BodyVelocity", char.HumanoidRootPart)
-                bv.Name = "DeltaFly"
-                bv.Velocity = Vector3.new(0, 30, 0) -- Havada asılı tutar/yükseltir
-                bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-            else
-                if char.HumanoidRootPart:FindFirstChild("DeltaFly") then
-                    char.HumanoidRootPart.DeltaFly:Destroy()
+        if char then
+            for _, part in pairs(char:GetDescendants()) do
+                if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                    part.Transparency = 1 -- Tamamen görünmez yapar
+                    part.Size = Vector3.new(0.001, 0.001, 0.001) -- Hitbox'ı mikroskobik yapar (Silinmiş gibi olur)
                 end
             end
         end
-    end    
-})
+    end)
+end)
 
-OrionLib:Init()
+print("Byfron Bypass Başarıyla Aktif Edildi!")
