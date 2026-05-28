@@ -1,40 +1,30 @@
--- Delta Executor ile %100 Uyumlu Gelişmiş Hile Menüsü
-local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
+-- Basit ve Stabil Kod
+local player = game.Players.LocalPlayer
+local char = player.Character
 
--- 1. Pencereyi Oluştur (Ekranın ortasında çok şık bir menü açar)
-local Window = OrionLib:MakeWindow({
-    Name = "AI Premium Menu v2", 
-    HidePremium = false, 
-    SaveConfig = true, 
-    ConfigFolder = "OrionTest"
-})
+-- 1. Görünmezlik (Bunu manuel açıp kapatmak için kodu tekrar execute et)
+for _, v in pairs(char:GetDescendants()) do
+    if v:IsA("BasePart") then v.Transparency = 1 end
+end
 
--- Kısayollar
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local RunService = game:GetService("RunService")
+-- 2. Hız (Konsola '_G.Speed = 100' yazarsan çalışır)
+_G.Speed = 16
+game:GetService("RunService").RenderStepped:Connect(function()
+    if char:FindFirstChild("Humanoid") then
+        char.Humanoid.WalkSpeed = _G.Speed
+    end
+end)
 
--- 2. Sekmeleri Oluştur
-local MainTab = Window:MakeTab({ Name = "Ana Özellikler", Icon = "rbxassetid://4483345998", Premium = false })
-local MovementTab = Window:MakeTab({ Name = "Hareket/Uçma", Icon = "rbxassetid://4483345998", Premium = false })
+-- 3. Uçma (Konsola '_G.Fly = true' yaz)
+_G.Fly = false
+game:GetService("RunService").RenderStepped:Connect(function()
+    if _G.Fly and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.Velocity = Vector3.new(0, 50, 0)
+    end
+end)
 
--- ANA ÖZELLİKLER SEKRESİ
--- Hitbox Silme / Görünmezlik
-MainTab:AddToggle({
-    Name = "Hitbox'ı Tamamen Sil (Dokunulmazlık)",
-    Default = false,
-    Callback = function(Value)
-        _G.HitboxSil = Value
-        task.spawn(function()
-            while _G.HitboxSil do
-                local char = LocalPlayer.Character
-                if char then
-                    for _, part in pairs(char:GetDescendants()) do
-                        if part:IsA("BasePart") then
-                            part.Transparency = Value and 1 or 0
-                            part.CanCollide = not Value
-                        end
-                    end
+print("Script yüklendi! Hız için: _G.Speed = 100 | Uçmak için: _G.Fly = true")
+end
                 end
                 task.wait(1)
             end
